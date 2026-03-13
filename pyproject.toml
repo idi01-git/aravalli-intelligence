@@ -1,0 +1,49 @@
+[project]
+name = "aravalli-intelligence"
+version = "1.0.0"
+description = "AI-Powered Ecological Monitoring for the Aravalli Range"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Shivang", email = "biobytes@innorave.dev"}
+]
+dependencies = [
+    "numpy>=1.26.0",
+    "scipy>=1.11.0",
+    "scikit-learn>=1.4.0",
+    "geopandas>=0.14.0",
+    "shapely>=2.0.0",
+    "libpysal>=4.9.0",
+    "esda>=2.5.0",
+    "ruptures>=1.1.0",
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "httpx>=0.26.0",
+    "groq>=0.4.2",
+    "google-generativeai>=0.4.0",
+    "python-dotenv>=1.0.0",
+    "pandas>=2.2.0",
+    "pyyaml>=6.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.2.0",
+    "black>=24.0.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

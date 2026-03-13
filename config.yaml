@@ -1,0 +1,239 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Aravalli Intelligence v1.0 — Master Configuration
+#  Single source of truth. 84 controllable parameters.
+#  Never modified at runtime — overrides sent via POST /api/analyze.
+# ─────────────────────────────────────────────────────────────────────────────
+
+project:
+  name: "Aravalli Intelligence"
+  version: "1.0.0"
+  author: "Team BIOBYTES"
+
+# ── GROUP I: DATA SOURCE (7 params) ────────────────────────────────────────
+data:
+  mode: "real_file"                  # real_file | synthetic | gee_live
+  real_file_path: "data/real_aravalli_7year.csv"
+  ground_truth_path: "data/real_ground_truth.csv"
+  fallback_to_synthetic: true
+  gee_project: "hackathon-iit-bhu"  # your GEE cloud project ID
+  synthetic:
+    zone_count: 1000                 # 100-2000
+    noise_level: 0.03                # 0.01-0.10
+    deforestation_pct: 0.12          # 0.00-0.30
+    encroachment_pct: 0.08           # 0.00-0.30
+    mining_pct: 0.05                 # 0.00-0.20
+    event_onset_months: 3            # 1-6
+    lat_range: [24.5, 27.5]
+    lon_range: [72.5, 75.5]
+    elevation_range: [500, 1500]
+    elevation_tier_threshold: 900    # metres: < 900 = low, >= 900 = high
+    nightlight_rural_baseline: 5     # PRD Section 8: fixed rural baseline
+    seed: 42
+    # PRD Section 8: 12-value monthly NDVI curves per elevation tier
+    # Values correspond to Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec
+    curves:
+      low_elevation:                 # < 900m (drier, lower base NDVI)
+        - 0.22  # Jan
+        - 0.20  # Feb
+        - 0.18  # Mar  (pre-monsoon dry)
+        - 0.16  # Apr
+        - 0.18  # May
+        - 0.28  # Jun  (monsoon onset)
+        - 0.42  # Jul
+        - 0.50  # Aug  (peak monsoon)
+        - 0.48  # Sep
+        - 0.38  # Oct  (post-monsoon)
+        - 0.30  # Nov
+        - 0.25  # Dec
+      high_elevation:                # >= 900m (cooler, denser forest)
+        - 0.32  # Jan
+        - 0.30  # Feb
+        - 0.28  # Mar
+        - 0.26  # Apr
+        - 0.28  # May
+        - 0.38  # Jun
+        - 0.52  # Jul
+        - 0.62  # Aug  (peak)
+        - 0.60  # Sep
+        - 0.48  # Oct
+        - 0.40  # Nov
+        - 0.35  # Dec
+
+# ── GROUP B: SEASONAL AND DSR (12 params) ──────────────────────────────────
+baseline:
+  method: "adaptive"                 # adaptive | regional
+  smoothing_window: 3                # 1-6 months
+  slope_short_window: 3              # 2-6
+  volatility_window: 12              # 3-24
+  ndvi_health_threshold: 0.30        # 0.1-0.5
+  regional_fallback:
+    ndvi: 0.35
+    ndbi: -0.10
+    bsi: 0.05
+
+dsr:
+  threshold_normal: 1.50             # 1.0-3.0
+  threshold_transition: 2.00         # 1.0-4.0
+  seasonal_normal_cutoff: 1.20       # 0.5-2.0
+  min_absolute_change: 0.10          # 0.03-0.30
+  high_ndvi_baseline: 0.60           # 0.3-0.8
+  high_ndvi_min_change: 0.15         # 0.05-0.30
+  transition_months: [3, 4, 10, 11]
+
+# ── GROUP A: ENSEMBLE METHODS (18 params) ──────────────────────────────────
+ensemble:
+  min_weighted_score: 0.50           # 0.20-0.90
+  scaler: "robust"                   # robust | standard | minmax
+  methods:
+    isolation_forest:
+      enabled: true
+      weight: 0.35                   # 0.00-1.00
+      contamination: 0.10            # 0.01-0.30
+      n_estimators: 200              # 50-500
+      max_samples: 0.80              # 0.3-1.0
+      importance_repeats: 10         # 5-50 (number of permutations for importance)
+      random_state: 42
+    dbscan:
+      enabled: true
+      weight: 0.30                   # 0.00-1.00
+      eps: 0.50                      # 0.10-2.00
+      min_samples: 3                 # 2-15
+    lof:
+      enabled: true
+      weight: 0.25                   # 0.00-1.00
+      n_neighbors: 20                # 5-50
+      contamination: 0.10            # 0.01-0.30
+    kmeans:
+      enabled: true
+      weight: 0.10                   # 0.00-1.00
+      n_clusters: 8                  # 2-15
+      n_init: 10
+
+# ── GROUP C: DRIFT SCORE (11 params) ──────────────────────────────────────
+drift:
+  weights:
+    ndvi: 0.35                       # 0.00-1.00
+    temporal: 0.25                   # 0.00-1.00
+    spatial: 0.20                    # 0.00-1.00
+    dsr: 0.20                        # 0.00-1.00
+  normalization:
+    ndvi_divisor: 0.30               # 0.1-0.5
+    consecutive_normalizer: 15       # 5-30
+    anomaly_divisor: 4               # 1-10
+  severity:
+    moderate: 3.0                    # 2.0-5.0
+    high: 5.0                        # 4.0-7.0
+    severe: 7.0                      # 5.0-9.0
+    critical: 8.5                    # 7.0-10.0
+
+# ── GROUP D: POST-DETECTION FILTERS (14 params) ──────────────────────────
+filters:
+  seasonal_dsr:
+    enabled: true
+  regional_context:
+    enabled: true
+    health_threshold: 0.40           # 0.1-0.8
+  duration_check:
+    enabled: true
+    min_consecutive: 2               # 1-8
+    confidence_cap: 40               # 10-80
+  recovery:
+    enabled: true
+    threshold: 0.05                  # 0.01-0.20
+  monsoon:
+    enabled: true
+    months: [7, 8, 9]
+  confidence_floor:
+    enabled: true
+    value: 30                        # 5-95
+  temporal_confirmation:
+    enabled: true
+    require_consecutive: 6           # 2-12
+
+# ── GROUP E: THREAT CLASSIFICATION (14 params) ───────────────────────────
+classification:
+  encroachment:
+    ndvi_drop_min: -0.10             # -0.30 to -0.03
+    ndbi_rise_min: 0.05              # 0.01-0.20
+    nightlight_min: 3                # 1-20
+  mining:
+    ndvi_drop_min: -0.10             # -0.30 to -0.03
+    bsi_rise_min: 0.08               # 0.01-0.25
+    ndbi_max: 0.02                   # 0.01-0.15
+  deforestation:
+    ndvi_drop_min: -0.15             # -0.40 to -0.05
+    bsi_max: 0.05                    # 0.01-0.15
+    ndbi_max: 0.02                   # 0.01-0.15
+  score_weights:
+    vegetation: 0.30                 # 0.00-1.00
+    urban: 0.20                      # 0.00-1.00
+    soil: 0.15                       # 0.00-1.00
+    nightlight: 0.15                 # 0.00-1.00
+    seasonal_proof: 0.20             # 0.00-1.00
+
+# ── GROUP F: NORMALIZATION CONSTANTS (6 params) ─────────────────────────
+normalization:
+  threat_score:
+    ndvi_divisor: 0.30               # 0.1-0.5
+    ndbi_divisor: 0.20               # 0.05-0.4
+    bsi_divisor: 0.20                # 0.05-0.4
+    nightlight_divisor: 10           # 2-20
+    dsr_divisor: 2                   # 1-5
+    cap: 100                         # 50-200
+
+# ── GROUP G: SPATIAL (4 params) ──────────────────────────────────────────
+spatial:
+  k_neighbors: 8                     # 3-30
+  morans_i_threshold: 0.30           # 0.1-0.8
+  geojson:
+    buffer_radius_km: 1.5            # 0.5-5.0
+    polygon_segments: 32             # 8-64
+
+# ── GROUP H: CHANGEPOINT DETECTION (3 params) ───────────────────────────
+changepoint:
+  model: "rbf"                       # rbf | l2 | linear
+  penalty: 3.0                       # 1.0-10.0
+  min_segment_length: 3              # 2-12
+
+# ── GROUP J: AI REPORTS (controllable parameters) ────────────────────────
+reports:
+  temperature: 0.30                  # 0.0-1.0  (UI slider)
+  max_tokens: 300                    # 100-500  (UI slider)
+  timeout_seconds: 15
+  delay_between_calls: 1
+
+# ── LLM PROVIDER CONFIGURATION ──────────────────────────────────────────
+# Set API keys in .env file (NEVER commit keys to git):
+#   PRIMARY_LLM_API_KEY=your_key_here
+#   FALLBACK_LLM_API_KEY=your_key_here
+llm:
+  primary:
+    model: "openai/gpt-oss-120b"      # Reasoning model on Groq
+    provider: "groq"                  # together_ai | replicate | openrouter | groq
+    api_endpoint: "https://api.groq.com/openai/v1/chat/completions"
+    api_key: ""                       # Override via PRIMARY_LLM_API_KEY env var
+    temperature: 0.30                 # 0.0-1.0  (lower = more consistent)
+    max_tokens: 300                   # 100-500
+    reasoning_effort: "high"          # Groq specific parameter for deep reasoning
+    timeout: 30                       # seconds  (reasoning needs more time)
+    delay_between_calls: 14            # seconds  (rate limit safety)
+  fallback:
+    model: "llama-3.3-70b-versatile"  # Text-to-text on Groq
+    provider: "groq"                  # together_ai | replicate | openrouter | groq
+    api_endpoint: "https://api.groq.com/openai/v1/chat/completions"
+    api_key: ""                       # Override via FALLBACK_LLM_API_KEY env var
+    temperature: 0.30                 # 0.0-1.0
+    max_tokens: 300                   # 100-500
+    timeout: 20                       # seconds  (text-to-text is faster)
+    delay_between_calls: 1            # seconds
+
+# ── SERVER ──────────────────────────────────────────────────────────────
+server:
+  host: "0.0.0.0"
+  port: 8000
+  cors_origins: ["*"]
+
+# ── LOGGING ─────────────────────────────────────────────────────────────
+logging:
+  level: "INFO"
+  format: "%(asctime)s [%(name)s] %(levelname)s: %(message)s"

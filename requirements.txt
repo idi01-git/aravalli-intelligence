@@ -1,0 +1,17 @@
+numpy>=1.26.0
+scipy>=1.11.0
+scikit-learn>=1.4.0
+geopandas>=0.14.0
+shapely>=2.0.0
+libpysal>=4.9.0
+esda>=2.5.0
+ruptures>=1.1.0
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+httpx>=0.26.0
+groq>=0.4.2
+google-generativeai>=0.4.0
+python-dotenv>=1.0.0
+pandas>=2.2.0
+pyyaml>=6.0.1
+pytest>=8.0.0
