@@ -744,6 +744,6 @@ if __name__ == "__main__":
     raw_df = pd.read_csv(raw_path)
     feature_df = run_features(raw_df, config)
 
-    print(f"\n✓ Feature engineering complete: {len(feature_df)} zones, {len(feature_df.columns)} features")
+    print(f"\n[OK] Feature engineering complete: {len(feature_df)} zones, {len(feature_df.columns)} features")
     print(f"  Columns: {list(feature_df.columns)}")
     print(f"  Output: output/features.csv + output/zone_timeseries/")

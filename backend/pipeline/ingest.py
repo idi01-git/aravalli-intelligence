@@ -379,7 +379,7 @@ if __name__ == "__main__":
 
     config = load_config()
     df = run_ingestion(config)
-    print(f"\n✓ Ingestion complete: {len(df):,} rows, {df['zone_id'].nunique()} zones")
+    print(f"\n[OK] Ingestion complete: {len(df):,} rows, {df['zone_id'].nunique()} zones")
     print(f"  Columns: {list(df.columns)}")
     print(f"  NDVI range: [{df['ndvi'].min():.4f}, {df['ndvi'].max():.4f}]")
     print(f"  Output: output/raw_data.csv")

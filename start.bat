@@ -12,6 +12,8 @@ echo     Team BIOBYTES
 echo   ========================================
 echo.
 
+cd backend
+
 echo [1/6] Installing Python dependencies...
 pip install -r requirements.txt --quiet
 if errorlevel 1 (
@@ -60,8 +62,8 @@ echo   Docs: http://localhost:8000/docs
 echo.
 
 REM Start frontend in a new window
-if exist frontend\package.json (
-    start cmd /k "cd frontend && npm install && npm run dev"
+if exist ..\frontend\package.json (
+    start cmd /k "cd ..\frontend && npm install && npm run dev"
     timeout /t 3 /nobreak >nul
 )
 

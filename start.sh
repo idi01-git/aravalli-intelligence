@@ -13,7 +13,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$SCRIPT_DIR/backend"
 
 log_info()  { echo -e "${GREEN}[✓]${NC} $1"; }
 log_step()  { echo -e "${CYAN}[➤]${NC} ${BOLD}$1${NC}"; }
@@ -75,9 +75,9 @@ echo -e "  ${GREEN}Docs:${NC} http://localhost:8000/docs"
 echo ""
 
 # Start frontend dev server in background
-if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
-    cd frontend && npm install --silent && npm run dev &
-    cd "$SCRIPT_DIR"
+if [ -d "../frontend" ] && [ -f "../frontend/package.json" ]; then
+    cd ../frontend && npm install --silent && npm run dev &
+    cd "$SCRIPT_DIR/backend"
     sleep 2
 fi
 
